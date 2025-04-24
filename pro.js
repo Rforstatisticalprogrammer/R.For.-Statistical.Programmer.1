@@ -1,14 +1,10 @@
 // Simulated database
 const users = [
-    { username: 'viewer', password: 'viewer123', role: 'viewer' },
-    { username: 'admin', password: 'admin123', role: 'admin' }
+    { username: 'sharoon shaik', password: 'shubham', role: 'admin' },
+    { username: 'R Classes', password: 'batch 1', role: 'user' }
 ];
 
-const videos = [
-    { id: 1, title: 'Introduction to Security', thumbnail: 'https://via.placeholder.com/300x180?text=Security+Video', url: 'assets/videos/sample1.mp4', description: 'Learn the basics of security principles.' },
-    { id: 2, title: 'Advanced Encryption', thumbnail: 'https://via.placeholder.com/300x180?text=Encryption+Video', url: 'assets/videos/sample2.mp4', description: 'Deep dive into encryption techniques.' },
-    { id: 3, title: 'DRM Protection', thumbnail: 'https://via.placeholder.com/300x180?text=DRM+Video', url: 'assets/videos/sample3.mp4', description: 'Understanding Digital Rights Management.' }
-];
+let videos = []; // Start with empty video collection
 
 // Current user session
 let currentUser = null;
@@ -37,20 +33,36 @@ const manageSection = document.getElementById('manageSection');
 const adminVideoList = document.getElementById('adminVideoList');
 const videoUpload = document.getElementById('videoUpload');
 const dropArea = document.getElementById('dropArea');
+const selectFilesBtn = document.getElementById('selectFilesBtn');
 const uploadProgress = document.getElementById('uploadProgress');
 const uploadFileName = document.getElementById('uploadFileName');
 const uploadProgressBar = document.getElementById('uploadProgressBar');
 const uploadStatus = document.getElementById('uploadStatus');
 
+// Reset video player function
+function resetVideoPlayer() {
+    secureVideoPlayer.pause();
+    secureVideoPlayer.currentTime = 0;
+    secureVideoPlayer.removeAttribute('src');
+    secureVideoPlayer.load();
+    videoTitle.textContent = '';
+    videoDescription.textContent = '';
+}
+
 // Initialize the app
 function init() {
-    // Check if user is already logged in (simulated session check)
+    // Check if user is already logged in
     const sessionToken = localStorage.getItem('sessionToken');
     if (sessionToken) {
-        currentUser = JSON.parse(localStorage.getItem('currentUser'));
-        currentSessionToken = sessionToken;
-        showVideosPage();
-        return;
+        try {
+            currentUser = JSON.parse(localStorage.getItem('currentUser'));
+            currentSessionToken = sessionToken;
+            showVideosPage();
+        } catch (e) {
+            handleLogout();
+        }
+    } else {
+        showLoginPage();
     }
 
     // Event listeners
@@ -59,9 +71,13 @@ function init() {
     adminBtn.addEventListener('click', showAdminPage);
     backToVideosBtn.addEventListener('click', showVideosPage);
     adminLogoutBtn.addEventListener('click', handleLogout);
-    backFromPlayerBtn.addEventListener('click', showVideosPage);
+    backFromPlayerBtn.addEventListener('click', () => {
+        resetVideoPlayer();
+        showVideosPage();
+    });
     playerLogoutBtn.addEventListener('click', handleLogout);
     videoUpload.addEventListener('change', handleFileUpload);
+    selectFilesBtn.addEventListener('click', () => videoUpload.click());
 
     // Drag and drop for upload
     ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
@@ -106,6 +122,7 @@ function generateSessionToken() {
 
 // Show login page
 function showLoginPage() {
+    resetVideoPlayer();
     loginPage.classList.remove('hidden');
     videosPage.classList.add('hidden');
     adminPage.classList.add('hidden');
@@ -114,12 +131,12 @@ function showLoginPage() {
 
 // Show videos page
 function showVideosPage() {
+    resetVideoPlayer();
     loginPage.classList.add('hidden');
     videosPage.classList.remove('hidden');
     adminPage.classList.add('hidden');
     playerPage.classList.add('hidden');
     
-    // Show admin button if user is admin
     if (currentUser && currentUser.role === 'admin') {
         adminBtn.classList.remove('hidden');
     } else {
@@ -131,19 +148,24 @@ function showVideosPage() {
 
 // Show admin page
 function showAdminPage() {
+    resetVideoPlayer();
+    if (!currentUser || currentUser.role !== 'admin') {
+        alert('You do not have admin privileges');
+        return;
+    }
+    
     loginPage.classList.add('hidden');
     videosPage.classList.add('hidden');
     adminPage.classList.remove('hidden');
     playerPage.classList.add('hidden');
     
-    // Reset to upload section
     document.querySelectorAll('.admin-sidebar li').forEach(i => i.classList.remove('active'));
     document.querySelector('.admin-sidebar li[data-section="upload"]').classList.add('active');
     uploadSection.classList.remove('hidden');
     manageSection.classList.add('hidden');
 }
 
-// Show video player
+// Show video player with MP4 specific handling
 function showVideoPlayer(videoId) {
     const video = videos.find(v => v.id === videoId);
     if (!video) return;
@@ -156,46 +178,70 @@ function showVideoPlayer(videoId) {
     videoTitle.textContent = video.title;
     videoDescription.textContent = video.description;
     
-    // In a real app, we would use DRM-protected streams
-    secureVideoPlayer.src = video.url;
+    // Set video source with type attribute for MP4
+    secureVideoPlayer.innerHTML = `
+        <source src="${video.url}" type="video/mp4">
+        Your browser does not support MP4 videos.
+    `;
+    secureVideoPlayer.load();
+    secureVideoPlayer.controls = true;
+    secureVideoPlayer.controlsList = 'nodownload';
     
-    // Check for screen recording (simulated)
-    checkScreenRecording();
+    // Enhanced error handling for MP4
+    secureVideoPlayer.addEventListener('error', () => {
+        const error = secureVideoPlayer.error;
+        let message = 'Error loading MP4 video.';
+        
+        if (error) {
+            switch(error.code) {
+                case MediaError.MEDIA_ERR_SRC_NOT_SUPPORTED:
+                    message = 'The MP4 format is not supported.';
+                    break;
+                case MediaError.MEDIA_ERR_NETWORK:
+                    message = 'Network error loading MP4 video.';
+                    break;
+                case MediaError.MEDIA_ERR_DECODE:
+                    message = 'Error decoding MP4 video.';
+                    break;
+            }
+        }
+        
+        console.error('MP4 video error:', error);
+        alert(message);
+        showVideosPage();
+    });
 }
 
 // Render video grid
 function renderVideoGrid() {
     videoGrid.innerHTML = '';
+    
+    if (videos.length === 0) {
+        videoGrid.innerHTML = `
+            <div class="empty-state">
+                <p>No videos available</p>
+                ${currentUser?.role === 'admin' ? 
+                    '<p>Upload MP4 videos using the admin panel</p>' : 
+                    '<p>Contact administrator to upload videos</p>'}
+            </div>
+        `;
+        return;
+    }
+    
     videos.forEach(video => {
         const videoCard = document.createElement('div');
         videoCard.className = 'video-card';
-        videoCard.innerHTML = `
+        videoCard.innerHTML = ` 
             <div class="video-thumbnail">
-                <img src="${video.thumbnail}" alt="${video.title}">
+                <img src="${video.thumbnail}" alt="${video.title}" onerror="this.src='https://via.placeholder.com/300x180?text=Video+Thumbnail'">
             </div>
             <div class="video-info">
                 <h3>${video.title}</h3>
-                <button class="btn" onclick="showVideoPlayer(${video.id})">Watch</button>
+                <button class="btn" onclick="showVideoPlayer(${video.id})">Play Video</button>
             </div>
         `;
         videoGrid.appendChild(videoCard);
     });
-}
-
-// Check for screen recording (simulated)
-function checkScreenRecording() {
-    // In a real app, this would use Widevine DRM or other detection methods
-    // For demo purposes, we'll simulate random detection
-    const isRecording = Math.random() > 0.7; // 30% chance of "detection"
-    
-    if (isRecording) {
-        recordingWarning.style.display = 'block';
-        secureVideoPlayer.pause();
-        secureVideoPlayer.controls = false;
-    } else {
-        recordingWarning.style.display = 'none';
-        secureVideoPlayer.controls = true;
-    }
 }
 
 // Handle login
@@ -205,15 +251,12 @@ function handleLogin(e) {
     const username = document.getElementById('username').value;
     const password = document.getElementById('password').value;
     
-    // Simulate authentication
     const user = users.find(u => u.username === username && u.password === password);
     
     if (user) {
-        // Simulate session creation
         currentUser = user;
         currentSessionToken = generateSessionToken();
         
-        // Store session (in a real app, this would be a secure HTTP-only cookie)
         localStorage.setItem('currentUser', JSON.stringify(user));
         localStorage.setItem('sessionToken', currentSessionToken);
         
@@ -227,6 +270,14 @@ function handleLogin(e) {
 
 // Handle logout
 function handleLogout() {
+    // Clean up any blob URLs
+    videos.forEach(video => {
+        if (video.url.startsWith('blob:')) {
+            URL.revokeObjectURL(video.url);
+        }
+    });
+    
+    resetVideoPlayer();
     currentUser = null;
     currentSessionToken = null;
     localStorage.removeItem('currentUser');
@@ -259,10 +310,15 @@ function handleDrop(e) {
     handleFiles(files);
 }
 
-// Handle selected files
+// Handle selected files with MP4 validation
 function handleFiles(files) {
     if (files.length > 0) {
-        simulateUpload(files[0]);
+        const file = files[0];
+        if (file.type === 'video/mp4' || file.name.toLowerCase().endsWith('.mp4')) {
+            simulateUpload(file);
+        } else {
+            alert('Please upload only MP4 video files (.mp4)');
+        }
     }
 }
 
@@ -271,7 +327,7 @@ function handleFileUpload(e) {
     handleFiles(e.target.files);
 }
 
-// Simulate file upload (in a real app, this would be an AJAX call)
+// Simulate file upload with MP4 validation
 function simulateUpload(file) {
     uploadProgress.classList.remove('hidden');
     uploadFileName.textContent = file.name;
@@ -289,58 +345,68 @@ function simulateUpload(file) {
             clearInterval(interval);
             uploadStatus.textContent = 'Upload complete! Processing video...';
             
-            // Simulate processing delay
             setTimeout(() => {
-                // Add the new video to the "database"
+                const videoUrl = URL.createObjectURL(file);
                 const newVideo = {
-                    id: videos.length + 1,
-                    title: file.name.replace(/\.[^/.]+$/, ""), // Remove extension
-                    thumbnail: 'https://via.placeholder.com/300x180?text=New+Video',
-                    url: URL.createObjectURL(file),
-                    description: 'Newly uploaded video'
+                    id: videos.length > 0 ? Math.max(...videos.map(v => v.id)) + 1 : 1,
+                    title: file.name.replace(/\.mp4$/i, "").replace(/_/g, " "),
+                    thumbnail: 'https://via.placeholder.com/300x180?text=Video+Thumbnail',
+                    url: videoUrl,
+                    description: `Uploaded on ${new Date().toLocaleDateString()}`
                 };
+                
                 videos.push(newVideo);
+                uploadStatus.textContent = 'Video ready!';
                 
-                uploadStatus.textContent = 'Video processed and ready!';
                 loadAdminVideoList();
+                renderVideoGrid();
                 
-                // Reset form after delay
                 setTimeout(() => {
                     uploadProgress.classList.add('hidden');
                     videoUpload.value = '';
-                }, 2000);
-            }, 2000);
+                }, 1500);
+            }, 1500);
         }
-    }, 300);
+    }, 200);
 }
 
 // Load admin video list
 function loadAdminVideoList() {
     adminVideoList.innerHTML = '';
+    
+    if (videos.length === 0) {
+        adminVideoList.innerHTML = '<p class="empty-state">No videos uploaded yet</p>';
+        return;
+    }
+    
     videos.forEach(video => {
         const videoItem = document.createElement('div');
         videoItem.className = 'video-list-item';
-        videoItem.innerHTML = `
-            <div>
+        videoItem.innerHTML = ` 
+            <div class="video-info">
                 <h3>${video.title}</h3>
                 <p>ID: ${video.id}</p>
             </div>
             <div class="actions">
-                <button class="btn" onclick="deleteVideo(${video.id})">Delete</button>
+                <button class="btn" style="background-color: var(--danger-color);" onclick="deleteVideo(${video.id})">Delete</button>
             </div>
         `;
         adminVideoList.appendChild(videoItem);
     });
 }
 
-// Delete video
+// Delete video with blob URL cleanup
 function deleteVideo(id) {
     if (confirm('Are you sure you want to delete this video?')) {
         const index = videos.findIndex(v => v.id === id);
         if (index !== -1) {
+            // Revoke object URL if it was created from a local file
+            if (videos[index].url.startsWith('blob:')) {
+                URL.revokeObjectURL(videos[index].url);
+            }
             videos.splice(index, 1);
             loadAdminVideoList();
-            renderVideoGrid(); // Update the main video grid
+            renderVideoGrid();
         }
     }
 }
@@ -348,8 +414,6 @@ function deleteVideo(id) {
 // Initialize the app when DOM is loaded
 document.addEventListener('DOMContentLoaded', init);
 
-// Make functions available globally for HTML onclick attributes
+// Make functions available globally for HTML event handlers
 window.showVideoPlayer = showVideoPlayer;
 window.deleteVideo = deleteVideo;
-
-

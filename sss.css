@@ -20,6 +20,10 @@ body {
     line-height: 1.6;
 }
 
+.hidden {
+    display: none !important;
+}
+
 /* Login Page Styles */
 .login-container {
     max-width: 400px;
@@ -220,7 +224,6 @@ header {
 }
 
 .recording-warning {
-    display: none;
     background: var(--danger-color);
     color: white;
     padding: 10px;
@@ -229,31 +232,31 @@ header {
     border-radius: 4px;
 }
 
-/* Device Warning and Session Info */
-.device-warning {
-    background-color: var(--danger-color);
-    color: white;
+/* Upload Progress */
+#uploadProgress {
+    margin-top: 20px;
     padding: 15px;
-    margin-bottom: 20px;
+    background: #f9f9f9;
     border-radius: 4px;
-    text-align: center;
-    display: none;
 }
 
-.session-info {
-    background-color: var(--light-color);
-    padding: 10px;
-    border-radius: 4px;
-    margin-bottom: 15px;
-    font-size: 0.9rem;
+#uploadProgressBar {
+    width: 100%;
+    height: 20px;
+    margin: 10px 0;
 }
 
-.session-info span {
-    font-weight: bold;
-    color: var(--dark-color);
-}
-
-/* Utility Classes */
-.hidden {
-    display: none !important;
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .admin-container {
+        flex-direction: column;
+    }
+    
+    .admin-sidebar {
+        width: 100%;
+    }
+    
+    .video-grid {
+        grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    }
 }
