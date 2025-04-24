@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Secure Video Platform</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f5f5f5;
+        }
+        .hidden {
+            display: none !important;
+        }
+        .login-container {
+            max-width: 400px;
+            margin: 100px auto;
+            padding: 30px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        .logo h1 {
+            color: #2c3e50;
+            margin-bottom: 30px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+            text-align: left;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #333;
+        }
+        .form-group input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        .btn {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            width: 100%;
+        }
+        .btn:hover {
+            background-color: #2980b9;
+        }
+        .error-message {
+            color: #e74c3c;
+            margin-top: 15px;
+        }
+        header {
+            background-color: #2c3e50;
+            color: white;
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .video-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 20px;
+            padding: 20px;
+        }
+        .video-card {
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 0 5px rgba(0,0,0,0.1);
+            cursor: pointer;
+        }
+        .video-card img {
+            width: 100%;
+            height: 150px;
+            object-fit: cover;
+        }
+        .video-info {
+            padding: 15px;
+        }
+        .video-info h3 {
+            margin: 0 0 10px;
+            font-size: 16px;
+        }
+        .admin-container {
+            display: flex;
+            min-height: calc(100vh - 60px);
+        }
+        .admin-sidebar {
+            width: 200px;
+            background: #34495e;
+            color: white;
+        }
+        .admin-sidebar ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        .admin-sidebar li {
+            padding: 15px 20px;
+            cursor: pointer;
+        }
+        .admin-sidebar li:hover {
+            background: #2c3e50;
+        }
+        .admin-sidebar li.active {
+            background: #3498db;
+        }
+        .admin-content {
+            flex: 1;
+            padding: 20px;
+            background: #ecf0f1;
+        }
+        .upload-area {
+            border: 2px dashed #bdc3c7;
+            border-radius: 5px;
+            padding: 30px;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .player-container {
+            padding: 20px;
+        }
+        .video-wrapper {
+            max-width: 800px;
+            margin: 0 auto 20px;
+        }
+        video {
+            width: 100%;
+            background: #000;
+        }
+        .recording-warning {
+            background: #e74c3c;
+            color: white;
+            padding: 15px;
+            margin-bottom: 20px;
+            text-align: center;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <!-- Login Page -->
+    <div id="loginPage" class="login-container">
+        <div class="logo">
+            <h1>SecureStream</h1>
+        </div>
+        <form id="loginForm">
+            <div class="form-group">
+                <label for="username">Username</label>
+                <input type="text" id="username" name="username" required>
+            </div>
+            <div class="form-group">
+                <label for="password">Password</label>
+                <input type="password" id="password" name="password" required>
+            </div>
+            <button type="submit" class="btn">Login</button>
+            <div id="loginError" class="error-message"></div>
+        </form>
+    </div>
+
+    <!-- Video Listing Page -->
+    <div id="videosPage" class="hidden">
+        <header>
+            <h1>SecureStream</h1>
+            <nav>
+                <button id="logoutBtn" class="btn">Logout</button>
+                <button id="adminBtn" class="btn hidden">Admin Panel</button>
+            </nav>
+        </header>
+        <main>
+            <div class="video-grid" id="videoGrid">
+                <!-- Videos will be loaded here -->
+                <div class="video-card" data-video-id="1">
+                    <img src="https://via.placeholder.com/300x150?text=Sample+Video+1" alt="Video Thumbnail">
+                    <div class="video-info">
+                        <h3>Sample Video 1</h3>
+                        <p>2:30</p>
+                    </div>
+                </div>
+                <div class="video-card" data-video-id="2">
+                    <img src="https://via.placeholder.com/300x150?text=Sample+Video+2" alt="Video Thumbnail">
+                    <div class="video-info">
+                        <h3>Sample Video 2</h3>
+                        <p>4:15</p>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Admin Panel -->
+    <div id="adminPage" class="hidden">
+        <header>
+            <h1>SecureStream Admin</h1>
+            <nav>
+                <button id="backToVideosBtn" class="btn">Back to Videos</button>
+                <button id="adminLogoutBtn" class="btn">Logout</button>
+            </nav>
+        </header>
+        <div class="admin-container">
+            <div class="admin-sidebar">
+                <ul>
+                    <li class="active" data-section="upload">Upload Videos</li>
+                    <li data-section="manage">Manage Videos</li>
+                </ul>
+            </div>
+            <div class="admin-content">
+                <div id="uploadSection">
+                    <h2>Upload New Video</h2>
+                    <div class="upload-area" id="dropArea">
+                        <p>Drag & drop video files here or</p>
+                        <input type="file" id="videoUpload" accept="video/*" style="display: none;">
+                        <button class="btn" onclick="document.getElementById('videoUpload').click()">Select Files</button>
+                    </div>
+                    <div id="uploadProgress" class="hidden">
+                        <p>Uploading: <span id="uploadFileName"></span></p>
+                        <progress id="uploadProgressBar" value="0" max="100"></progress>
+                        <p id="uploadStatus"></p>
+                    </div>
+                </div>
+                <div id="manageSection" class="hidden">
+                    <h2>Manage Videos</h2>
+                    <div class="video-list" id="adminVideoList">
+                        <!-- Admin video list will be loaded here -->
+                        <div class="video-card">
+                            <img src="https://via.placeholder.com/300x150?text=Sample+Video+1" alt="Video Thumbnail">
+                            <div class="video-info">
+                                <h3>Sample Video 1</h3>
+                                <button class="btn" style="background-color: #e74c3c;">Delete</button>
+                            </div>
+                        </div>
+                        <div class="video-card">
+                            <img src="https://via.placeholder.com/300x150?text=Sample+Video+2" alt="Video Thumbnail">
+                            <div class="video-info">
+                                <h3>Sample Video 2</h3>
+                                <button class="btn" style="background-color: #e74c3c;">Delete</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Video Player -->
+    <div id="playerPage" class="hidden">
+        <header>
+            <h1>SecureStream</h1>
+            <nav>
+                <button id="backFromPlayerBtn" class="btn">Back to Videos</button>
+                <button id="playerLogoutBtn" class="btn">Logout</button>
+            </nav>
+        </header>
+        <div class="player-container">
+            <div class="recording-warning" id="recordingWarning">
+                Screen recording detected! Video playback has been disabled.
+            </div>
+            <div class="video-wrapper">
+                <video id="secureVideoPlayer" controls>
+                    <source src="https://sample-videos.com/video123/mp4/720/big_buck_bunny_720p_1mb.mp4" type="video/mp4">
+                    Your browser does not support the video tag.
+                </video>
+            </div>
+            <h2 id="videoTitle">Sample Video</h2>
+            <p id="videoDescription">This is a sample video description.</p>
+        </div>
+    </div>
+
+    <script>
+        // Credentials
+        const credentials = {
+            admin: {
+                username: "admin",
+                password: "Admin@1234"
+            },
+            user: {
+                username: "user",
+                password: "User@1234"
+            }
+        };
+
+        // DOM Elements
+        const loginPage = document.getElementById('loginPage');
+        const videosPage = document.getElementById('videosPage');
+        const adminPage = document.getElementById('adminPage');
+        const playerPage = document.getElementById('playerPage');
+        const loginForm = document.getElementById('loginForm');
+        const loginError = document.getElementById('loginError');
+        const logoutBtn = document.getElementById('logoutBtn');
+        const adminBtn = document.getElementById('adminBtn');
+        const backToVideosBtn = document.getElementById('backToVideosBtn');
+        const adminLogoutBtn = document.getElementById('adminLogoutBtn');
+        const backFromPlayerBtn = document.getElementById('backFromPlayerBtn');
+        const playerLogoutBtn = document.getElementById('playerLogoutBtn');
+        const videoGrid = document.getElementById('videoGrid');
+        const videoPlayer = document.getElementById('secureVideoPlayer');
+        const recordingWarning = document.getElementById('recordingWarning');
+
+        // Current user
+        let currentUser = null;
+
+        // Login form submission
+        loginForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            
+            // Check admin credentials
+            if (username === credentials.admin.username && password === credentials.admin.password) {
+                currentUser = { username, role: 'admin' };
+                showVideosPage();
+                adminBtn.classList.remove('hidden');
+                return;
+            }
+            
+            // Check user credentials
+            if (username === credentials.user.username && password === credentials.user.password) {
+                currentUser = { username, role: 'user' };
+                showVideosPage();
+                adminBtn.classList.add('hidden');
+                return;
+            }
+            
+            // Invalid credentials
+            loginError.textContent = 'Invalid username or password';
+        });
+
+        // Logout functionality
+        function logout() {
+            currentUser = null;
+            loginPage.classList.remove('hidden');
+            videosPage.classList.add('hidden');
+            adminPage.classList.add('hidden');
+            playerPage.classList.add('hidden');
+            document.getElementById('username').value = '';
+            document.getElementById('password').value = '';
+            loginError.textContent = '';
+            if (videoPlayer) {
+                videoPlayer.pause();
+                videoPlayer.currentTime = 0;
+            }
+        }
+
+        logoutBtn.addEventListener('click', logout);
+        adminLogoutBtn.addEventListener('click', logout);
+        playerLogoutBtn.addEventListener('click', logout);
+
+        // Navigation
+        function showVideosPage() {
+            loginPage.classList.add('hidden');
+            videosPage.classList.remove('hidden');
+            adminPage.classList.add('hidden');
+            playerPage.classList.add('hidden');
+        }
+
+        function showAdminPage() {
+            loginPage.classList.add('hidden');
+            videosPage.classList.add('hidden');
+            adminPage.classList.remove('hidden');
+            playerPage.classList.add('hidden');
+        }
+
+        function showPlayerPage() {
+            loginPage.classList.add('hidden');
+            videosPage.classList.add('hidden');
+            adminPage.classList.add('hidden');
+            playerPage.classList.remove('hidden');
+        }
+
+        adminBtn.addEventListener('click', showAdminPage);
+        backToVideosBtn.addEventListener('click', showVideosPage);
+        backFromPlayerBtn.addEventListener('click', showVideosPage);
+
+        // Video player functionality
+        if (videoGrid) {
+            videoGrid.addEventListener('click', function(e) {
+                const videoCard = e.target.closest('.video-card');
+                if (videoCard) {
+                    showPlayerPage();
+                }
+            });
+        }
+
+        // Admin sidebar navigation
+        const adminSections = document.querySelectorAll('.admin-sidebar li');
+        adminSections.forEach(section => {
+            section.addEventListener('click', function() {
+                adminSections.forEach(s => s.classList.remove('active'));
+                this.classList.add('active');
+                
+                const sectionId = this.getAttribute('data-section');
+                document.querySelectorAll('.admin-content > div').forEach(div => {
+                    div.classList.add('hidden');
+                });
+                document.getElementById(sectionId + 'Section').classList.remove('hidden');
+            });
+        });
+
+        // Screen recording detection (basic example)
+        function checkForRecording() {
+            // This is a simplified example - real implementation would be more complex
+            const isRecording = false; // This would be determined by actual detection logic
+            
+            if (isRecording) {
+                recordingWarning.style.display = 'block';
+                if (videoPlayer) {
+                    videoPlayer.pause();
+                    videoPlayer.controls = false;
+                }
+            } else {
+                recordingWarning.style.display = 'none';
+                if (videoPlayer) {
+                    videoPlayer.controls = true;
+                }
+            }
+        }
+
+        // Periodically check for recording
+        if (playerPage) {
+            setInterval(checkForRecording, 5000);
+        }
+    </script>
+</body>
+</html>
